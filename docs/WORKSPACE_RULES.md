@@ -31,14 +31,14 @@ This document defines the team development workflow for the GamePriceCheck proje
 
 ### Database Tables
 
-- Use snake_case for table names: `products`, `sellers`, `product_listings`
-- Use singular or plural consistently (prefer plural for collections): `products`, `sellers`
+- Use snake_case for table names: `product`, `retailer`, `product_platform`
+- Use singular table names matching the Specification 2 entities: `category`, `maker`, `platform`, `product`, `product_platform`, `retailer`, `listing`
 - Use descriptive names that clearly indicate the table's purpose
 
 ### Database Columns
 
-- Use snake_case for column names: `product_id`, `seller_name`, `external_url`
-- Use foreign key references with `_id` suffix: `product_id`, `seller_id`
+- Use snake_case for column names: `product_id`, `discount_amount`, `product_url`
+- Use foreign key references with `_id` suffix: `product_id`, `retailer_id`
 - Use descriptive names that indicate the data type: `created_at`, `is_available`
 
 ### Branches

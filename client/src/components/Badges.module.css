@@ -1,0 +1,40 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.new {
+  color: #1e3a8a;
+  background: #dbeafe;
+}
+
+.used {
+  color: #78350f;
+  background: #fef3c7;
+}
+
+.refurbished {
+  color: #4c1d95;
+  background: #ede9fe;
+}
+
+.inStock {
+  color: #065f46;
+  background: #d1fae5;
+}
+
+.outOfStock {
+  color: #374151;
+  background: #e5e7eb;
+}
+
+.discount {
+  color: #fff;
+  background: var(--color-danger);
+}

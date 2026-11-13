@@ -1,0 +1,76 @@
+.page {
+  max-width: 760px;
+}
+
+.page h1 {
+  margin: 0 0 8px;
+  font-size: 1.75rem;
+}
+
+.page h2 {
+  margin: 24px 0 8px;
+  font-size: 1.25rem;
+}
+
+.page li {
+  margin-bottom: 8px;
+}
+
+.lead {
+  font-size: 1.0625rem;
+  color: var(--color-muted);
+}
+
+.definitions {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.definitions div {
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+}
+
+.definitions dt {
+  font-weight: 700;
+}
+
+.definitions dd {
+  margin: 2px 0 0;
+  color: var(--color-muted);
+}
+
+.center {
+  margin: 40px auto;
+  text-align: center;
+}
+
+.code {
+  margin: 0;
+  font-size: 4rem;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--color-primary);
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 10px;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}

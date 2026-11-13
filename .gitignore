@@ -1,10 +1,12 @@
 # Dependencies
 node_modules/
 
-# Environment variables
+# Environment variables / secrets (keep .env.example files)
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+*.pem
+*.key
 
 # OS files
 .DS_Store

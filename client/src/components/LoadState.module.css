@@ -1,0 +1,29 @@
+.loading {
+  padding: 24px 0;
+  color: var(--color-muted);
+  font-weight: 600;
+}
+
+.error {
+  padding: 16px;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.error p {
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+
+.error button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 8px;
+  background: #991b1b;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
