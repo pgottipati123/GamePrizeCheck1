@@ -1,0 +1,107 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+}
+
+.fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.legend {
+  margin-bottom: 4px;
+  padding: 0;
+  font-weight: 700;
+  font-size: 0.9375rem;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+
+.check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+}
+
+.priceInputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.priceField {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+}
+
+.priceField input,
+.select {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
+  font-size: 1rem;
+  background: #fff;
+  color: var(--color-text);
+}
+
+.priceField input[aria-invalid='true'] {
+  border-color: var(--color-danger);
+  outline-color: var(--color-danger);
+}
+
+.error {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-danger);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.apply,
+.clear {
+  flex: 1;
+  min-height: 44px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+
+.apply {
+  border: none;
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.clear {
+  border: 1px solid var(--color-border-strong);
+  background: #fff;
+  color: var(--color-text);
+}

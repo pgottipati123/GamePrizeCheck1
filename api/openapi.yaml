@@ -1,0 +1,677 @@
+openapi: 3.0.3
+info:
+  title: GamePriceCheck API
+  version: 0.2.0
+  license:
+    name: UNLICENSED (CSU Chico course project, not for redistribution)
+    url: https://github.com/pgottipati123/GamePrizeCheck1
+  description: |
+    Local Express API for GamePriceCheck Prototype 2. It reads the Specification 2
+    Supabase database (category, maker, platform, product, product_platform,
+    retailer, listing) with the server-side service role key and serves it to the
+    React client. Architecture: React client -> Express API -> Supabase.
+
+    Only listings from active retailers are returned. GamePriceCheck does not sell
+    products; "Go to retailer" links use each listing's `product_url`.
+servers:
+  - url: http://localhost:3000
+    description: Local development
+tags:
+  - name: System
+    description: Service status.
+  - name: Catalog
+    description: Categories, product search/browse, details, filter options and deals (public reads).
+  - name: Listings
+    description: Retailer listings for price comparison, plus the admin-only listing update.
+
+paths:
+  /api/health:
+    get:
+      tags: [System]
+      summary: Health check
+      operationId: getHealth
+      security: []
+      responses:
+        '200':
+          description: The API is running.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, example: ok }
+              example: { status: ok }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /api/categories:
+    get:
+      tags: [Catalog]
+      summary: List product categories (Search/Browse)
+      operationId: listCategories
+      security: []
+      responses:
+        '200':
+          description: Categories ordered by `display_order`.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, count]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Category' }
+                  count: { type: integer }
+              example:
+                data:
+                  - category_id: 10000000-0000-4000-8000-000000000001
+                    name: Games
+                    description: Physical video games on disc or cartridge.
+                    display_order: 1
+                    slug: games
+                count: 3
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /api/products:
+    get:
+      tags: [Catalog]
+      summary: Search, browse, filter and sort products
+      description: |
+        Matches `q` against product name, maker, category and platform. Condition,
+        retailer and price filters apply to individual listings: a product is
+        returned when at least one of its listings matches, and its `listings`,
+        `lowestPrice`, etc. are computed from the matching listings only.
+      operationId: listProducts
+      security: []
+      parameters:
+        - name: q
+          in: query
+          description: Search text, 2–100 characters (empty = all products).
+          schema: { type: string, minLength: 2, maxLength: 100 }
+          example: zelda
+        - name: category
+          in: query
+          description: Category slug from `GET /api/categories`.
+          schema: { type: string, example: consoles }
+        - name: condition
+          in: query
+          description: Listing condition. Repeat to allow several.
+          style: form
+          explode: true
+          schema:
+            type: array
+            items: { $ref: '#/components/schemas/Condition' }
+        - name: retailer
+          in: query
+          description: Retailer id. Repeat to allow several.
+          style: form
+          explode: true
+          schema:
+            type: array
+            items: { type: string, format: uuid }
+        - name: maker
+          in: query
+          description: Maker (developer/manufacturer) id. Repeat to allow several.
+          style: form
+          explode: true
+          schema:
+            type: array
+            items: { type: string, format: uuid }
+        - name: minPrice
+          in: query
+          schema: { type: number, minimum: 0, maximum: 10000 }
+        - name: maxPrice
+          in: query
+          description: Must be greater than or equal to `minPrice`.
+          schema: { type: number, minimum: 0, maximum: 10000 }
+        - name: year
+          in: query
+          description: Product release year.
+          schema: { type: integer, minimum: 1970, maximum: 2100 }
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [relevance, price_asc, price_desc, discount_desc, newest]
+            default: relevance
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100 }
+      responses:
+        '200':
+          description: Matching products.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, count, total]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/ProductSummary' }
+                  count: { type: integer, description: Number of products returned. }
+                  total: { type: integer, description: Number of matches before `limit`. }
+              examples:
+                search:
+                  $ref: '#/components/examples/ProductListResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /api/products/{id}:
+    get:
+      tags: [Catalog]
+      summary: Product details (View Product)
+      operationId: getProduct
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ProductId'
+      responses:
+        '200':
+          description: The product with its maker, category, platforms and active listings.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/ProductSummary' }
+              examples:
+                zelda:
+                  $ref: '#/components/examples/ProductDetailResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/products/{id}/listings:
+    get:
+      tags: [Listings]
+      summary: Compare retailer listings for a product (Compare Prices)
+      operationId: listProductListings
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ProductId'
+        - name: condition
+          in: query
+          schema: { $ref: '#/components/schemas/Condition' }
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [price_asc, price_desc, discount_desc, in_stock, retailer]
+            default: price_asc
+      responses:
+        '200':
+          description: Listings from active retailers.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, count]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Listing' }
+                  count: { type: integer }
+              examples:
+                compare:
+                  $ref: '#/components/examples/ListingsResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/filters:
+    get:
+      tags: [Catalog]
+      summary: Filter options for the Filter/Sort page
+      operationId: getFilters
+      security: []
+      parameters:
+        - name: category
+          in: query
+          description: Optional category slug to scope the options.
+          schema: { type: string, example: games }
+      responses:
+        '200':
+          description: Makers, active retailers and release years present in the catalog.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [makers, retailers, years]
+                    properties:
+                      makers:
+                        type: array
+                        items: { $ref: '#/components/schemas/Maker' }
+                      retailers:
+                        type: array
+                        items: { $ref: '#/components/schemas/Retailer' }
+                      years:
+                        type: array
+                        items: { type: integer }
+              example:
+                data:
+                  makers:
+                    - maker_id: 20000000-0000-4000-8000-000000000001
+                      name: Nintendo
+                      website_url: https://www.nintendo.com
+                      description: Japanese developer and manufacturer of the Nintendo Switch.
+                  retailers:
+                    - retailer_id: 60000000-0000-4000-8000-000000000001
+                      name: Best Buy
+                      website_url: https://www.bestbuy.com
+                      active: true
+                  years: [2023, 2022]
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /api/deals:
+    get:
+      tags: [Catalog]
+      summary: Top discounted products (Home "Top deals")
+      operationId: listDeals
+      security: []
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 20, default: 4 }
+      responses:
+        '200':
+          description: Products with a discounted listing, biggest discount first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, count]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/ProductSummary' }
+                  count: { type: integer }
+              examples:
+                topDeals:
+                  $ref: '#/components/examples/DealsResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /api/listings/{id}:
+    patch:
+      tags: [Listings]
+      summary: Update a retailer listing's price, discount, stock, condition or URL
+      description: |
+        Admin-only write used to keep a listing's price data current. Requires the
+        `X-Admin-Key` header to match the server's `ADMIN_API_KEY`. Send at least one
+        field; unknown fields are rejected. `last_updated` is set by a database trigger.
+      operationId: updateListing
+      security:
+        - AdminKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+          example: 70000000-0000-4000-8000-000000000002
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ListingUpdate' }
+            example: { price: 49.99, discount_amount: 3, in_stock: true }
+      responses:
+        '200':
+          description: The updated listing.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/ListingRow' }
+              example:
+                data:
+                  listing_id: 70000000-0000-4000-8000-000000000002
+                  product_id: 40000000-0000-4000-8000-000000000001
+                  retailer_id: 60000000-0000-4000-8000-000000000002
+                  price: 49.99
+                  condition: used
+                  in_stock: true
+                  discount_amount: 3
+                  product_url: https://www.gamestop.com/search/?q=zelda+tears+of+the+kingdom
+                  last_updated: '2026-11-13T01:54:26.974650+00:00'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401':
+          description: Missing or invalid `X-Admin-Key` header.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example: { error: { message: Missing or invalid X-Admin-Key header } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '503':
+          description: The write endpoint is disabled because `ADMIN_API_KEY` is not configured.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+components:
+  securitySchemes:
+    AdminKey:
+      type: apiKey
+      in: header
+      name: X-Admin-Key
+
+  parameters:
+    ProductId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+      example: 40000000-0000-4000-8000-000000000001
+
+  responses:
+    BadRequest:
+      description: Invalid path, query or body input.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example:
+            error:
+              message: 'Invalid query: maxPrice: must be greater than or equal to minPrice'
+              details:
+                - field: maxPrice
+                  message: must be greater than or equal to minPrice
+    NotFound:
+      description: The resource does not exist.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example:
+            error: { message: 'Product not found: 00000000-0000-4000-8000-000000000000' }
+    TooManyRequests:
+      description: Rate limit exceeded (RATE_LIMIT_PER_MINUTE requests per minute per IP).
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    Condition:
+      type: string
+      enum: [new, used, refurbished]
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [message]
+          properties:
+            message: { type: string }
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field: { type: string }
+                  message: { type: string }
+    Category:
+      type: object
+      properties:
+        category_id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        display_order: { type: integer }
+        slug: { type: string, description: URL-friendly name derived by the API. }
+    Maker:
+      type: object
+      properties:
+        maker_id: { type: string, format: uuid }
+        name: { type: string }
+        website_url: { type: string, nullable: true }
+        description: { type: string, nullable: true }
+    Platform:
+      type: object
+      properties:
+        platform_id: { type: string, format: uuid }
+        name: { type: string }
+        manufacturer: { type: string }
+        release_year: { type: integer, nullable: true }
+    Retailer:
+      type: object
+      properties:
+        retailer_id: { type: string, format: uuid }
+        name: { type: string }
+        website_url: { type: string }
+        active: { type: boolean }
+    ListingRow:
+      type: object
+      properties:
+        listing_id: { type: string, format: uuid }
+        product_id: { type: string, format: uuid }
+        retailer_id: { type: string, format: uuid }
+        price: { type: number }
+        condition: { $ref: '#/components/schemas/Condition' }
+        in_stock: { type: boolean }
+        discount_amount: { type: number, description: Dollars off the regular price. }
+        product_url: { type: string }
+        last_updated: { type: string, format: date-time }
+    Listing:
+      allOf:
+        - $ref: '#/components/schemas/ListingRow'
+        - type: object
+          properties:
+            retailer: { $ref: '#/components/schemas/Retailer' }
+            original_price:
+              type: number
+              description: Regular price, `price + discount_amount`.
+    ListingUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        price: { type: number, minimum: 0, maximum: 10000, multipleOf: 0.01 }
+        discount_amount: { type: number, minimum: 0, maximum: 10000, multipleOf: 0.01 }
+        in_stock: { type: boolean }
+        condition: { $ref: '#/components/schemas/Condition' }
+        product_url: { type: string, format: uri, pattern: '^https?://' }
+    ProductSummary:
+      type: object
+      properties:
+        product_id: { type: string, format: uuid }
+        category_id: { type: string, format: uuid }
+        maker_id: { type: string, format: uuid }
+        name: { type: string }
+        image_url: { type: string, nullable: true }
+        release_year: { type: integer, nullable: true }
+        description: { type: string, nullable: true }
+        category: { $ref: '#/components/schemas/Category' }
+        maker: { $ref: '#/components/schemas/Maker' }
+        platforms:
+          type: array
+          items: { $ref: '#/components/schemas/Platform' }
+        listings:
+          type: array
+          items: { $ref: '#/components/schemas/Listing' }
+        lowestPrice: { type: number, nullable: true }
+        lowestPriceListing:
+          type: object
+          allOf: [{ $ref: '#/components/schemas/Listing' }]
+          nullable: true
+          description: Cheapest in-stock listing, or the cheapest overall if none are in stock.
+        highestPrice: { type: number, nullable: true }
+        maxDiscount: { type: number }
+        retailerCount: { type: integer }
+        inStockCount: { type: integer }
+        conditions:
+          type: array
+          items: { $ref: '#/components/schemas/Condition' }
+
+  examples:
+    ListingsResponse:
+      summary: Listings for The Legend of Zelda, cheapest first
+      value:
+        count: 1
+        data:
+          - listing_id: 70000000-0000-4000-8000-000000000002
+            product_id: 40000000-0000-4000-8000-000000000001
+            retailer_id: 60000000-0000-4000-8000-000000000002
+            price: 52.99
+            condition: used
+            in_stock: true
+            discount_amount: 0
+            product_url: https://www.gamestop.com/search/?q=zelda+tears+of+the+kingdom
+            last_updated: '2026-11-13T01:52:51.701793+00:00'
+            retailer:
+              retailer_id: 60000000-0000-4000-8000-000000000002
+              name: GameStop
+              website_url: https://www.gamestop.com
+              active: true
+            original_price: 52.99
+    ProductDetailResponse:
+      summary: The Legend of Zelda details
+      value:
+        data:
+          product_id: 40000000-0000-4000-8000-000000000001
+          category_id: 10000000-0000-4000-8000-000000000001
+          maker_id: 20000000-0000-4000-8000-000000000001
+          name: 'The Legend of Zelda: Tears of the Kingdom'
+          image_url: null
+          release_year: 2023
+          description: Open-world action adventure across the skies and depths of Hyrule. Physical game card.
+          category:
+            category_id: 10000000-0000-4000-8000-000000000001
+            name: Games
+            description: Physical video games on disc or cartridge.
+            display_order: 1
+            slug: games
+          maker:
+            maker_id: 20000000-0000-4000-8000-000000000001
+            name: Nintendo
+            website_url: https://www.nintendo.com
+            description: Japanese developer and manufacturer of the Nintendo Switch.
+          platforms:
+            - platform_id: 30000000-0000-4000-8000-000000000001
+              name: Nintendo Switch
+              manufacturer: Nintendo
+              release_year: 2017
+          listings:
+            - listing_id: 70000000-0000-4000-8000-000000000002
+              product_id: 40000000-0000-4000-8000-000000000001
+              retailer_id: 60000000-0000-4000-8000-000000000002
+              price: 52.99
+              condition: used
+              in_stock: true
+              discount_amount: 0
+              product_url: https://www.gamestop.com/search/?q=zelda+tears+of+the+kingdom
+              last_updated: '2026-11-13T01:52:51.701793+00:00'
+              retailer:
+                retailer_id: 60000000-0000-4000-8000-000000000002
+                name: GameStop
+                website_url: https://www.gamestop.com
+                active: true
+              original_price: 52.99
+          lowestPrice: 52.99
+          highestPrice: 69.99
+          maxDiscount: 0
+          retailerCount: 2
+          inStockCount: 2
+          conditions: [new, used]
+    DealsResponse:
+      summary: Top deal (GET /api/deals?limit=1)
+      value:
+        count: 1
+        data:
+          - product_id: 40000000-0000-4000-8000-000000000002
+            category_id: 10000000-0000-4000-8000-000000000001
+            maker_id: 20000000-0000-4000-8000-000000000004
+            name: Elden Ring
+            image_url: null
+            release_year: 2022
+            description: Open-world action RPG set in the Lands Between. PlayStation 5 disc.
+            category:
+              category_id: 10000000-0000-4000-8000-000000000001
+              name: Games
+              description: Physical video games on disc or cartridge.
+              display_order: 1
+              slug: games
+            maker:
+              maker_id: 20000000-0000-4000-8000-000000000004
+              name: FromSoftware
+              website_url: https://www.fromsoftware.jp
+              description: Japanese game developer known for Dark Souls and Elden Ring.
+            platforms:
+              - platform_id: 30000000-0000-4000-8000-000000000002
+                name: PlayStation 5
+                manufacturer: Sony Interactive Entertainment
+                release_year: 2020
+            listings:
+              - listing_id: 70000000-0000-4000-8000-000000000003
+                product_id: 40000000-0000-4000-8000-000000000002
+                retailer_id: 60000000-0000-4000-8000-000000000004
+                price: 39.99
+                condition: new
+                in_stock: true
+                discount_amount: 20
+                product_url: https://www.walmart.com/search?q=elden+ring+ps5
+                last_updated: '2026-11-12T22:36:15.358665+00:00'
+                retailer:
+                  retailer_id: 60000000-0000-4000-8000-000000000004
+                  name: Walmart
+                  website_url: https://www.walmart.com
+                  active: true
+                original_price: 59.99
+            lowestPrice: 39.99
+            highestPrice: 39.99
+            maxDiscount: 20
+            retailerCount: 1
+            inStockCount: 1
+            conditions: [new]
+    ProductListResponse:
+      summary: Search for "zelda"
+      value:
+        count: 1
+        total: 1
+        data:
+          - product_id: 40000000-0000-4000-8000-000000000001
+            category_id: 10000000-0000-4000-8000-000000000001
+            maker_id: 20000000-0000-4000-8000-000000000001
+            name: 'The Legend of Zelda: Tears of the Kingdom'
+            image_url: null
+            release_year: 2023
+            description: Open-world action adventure across the skies and depths of Hyrule. Physical game card.
+            category:
+              category_id: 10000000-0000-4000-8000-000000000001
+              name: Games
+              description: Physical video games on disc or cartridge.
+              display_order: 1
+              slug: games
+            maker:
+              maker_id: 20000000-0000-4000-8000-000000000001
+              name: Nintendo
+              website_url: https://www.nintendo.com
+              description: Japanese developer and manufacturer of the Nintendo Switch.
+            platforms:
+              - platform_id: 30000000-0000-4000-8000-000000000001
+                name: Nintendo Switch
+                manufacturer: Nintendo
+                release_year: 2017
+            listings:
+              - listing_id: 70000000-0000-4000-8000-000000000002
+                product_id: 40000000-0000-4000-8000-000000000001
+                retailer_id: 60000000-0000-4000-8000-000000000002
+                price: 52.99
+                condition: used
+                in_stock: true
+                discount_amount: 0
+                product_url: https://www.gamestop.com/search/?q=zelda+tears+of+the+kingdom
+                last_updated: '2026-11-13T01:52:51.701793+00:00'
+                retailer:
+                  retailer_id: 60000000-0000-4000-8000-000000000002
+                  name: GameStop
+                  website_url: https://www.gamestop.com
+                  active: true
+                original_price: 52.99
+            lowestPrice: 52.99
+            highestPrice: 69.99
+            maxDiscount: 0
+            retailerCount: 2
+            inStockCount: 2
+            conditions: [new, used]

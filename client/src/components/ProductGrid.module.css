@@ -1,0 +1,44 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.empty {
+  padding: 32px 16px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: 14px;
+  text-align: center;
+  background: var(--color-surface);
+}
+
+.empty h2 {
+  margin: 0 0 6px;
+  font-size: 1.25rem;
+}
+
+.empty p {
+  margin: 0 0 12px;
+  color: var(--color-muted);
+}
+
+.emptyActions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+}
+
+.emptyActions button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 10px;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}

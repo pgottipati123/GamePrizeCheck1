@@ -1,0 +1,144 @@
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin-bottom: 16px;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.back {
+  min-height: 36px;
+  padding: 0 12px;
+  margin-right: 4px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  background: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.top {
+  display: grid;
+  gap: 20px;
+}
+
+.title {
+  margin: 0 0 12px;
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin: 0 0 12px;
+}
+
+.facts dt {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+}
+
+.facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.description {
+  margin: 0 0 16px;
+  color: var(--color-muted);
+}
+
+.bestBox {
+  padding: 16px;
+  border: 2px solid var(--color-success);
+  border-radius: 14px;
+  background: #ecfdf5;
+}
+
+.bestLabel {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-success);
+}
+
+.bestPrice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0;
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.bestMeta {
+  margin: 0 0 12px;
+  font-size: 0.9375rem;
+}
+
+.bestGo {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 10px;
+  background: var(--color-success);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.compare {
+  margin-top: 32px;
+}
+
+.compare h2 {
+  margin: 0 0 4px;
+  font-size: 1.375rem;
+}
+
+.compareIntro {
+  margin: 0 0 12px;
+  color: var(--color-muted);
+}
+
+@media (min-width: 768px) {
+  .top {
+    grid-template-columns: minmax(280px, 2fr) 3fr;
+    align-items: start;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+}
+
+.conditions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 16px;
+  font-weight: 600;
+}
+
+.compareLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 10px;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}

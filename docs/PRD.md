@@ -150,9 +150,10 @@ These features may be considered for future versions but are not part of Version
 ### Database
 
 - **Database**: PostgreSQL via Supabase
-- **ORM**: To be determined (may use Supabase client or an ORM like Prisma)
-- **Migrations**: Version-controlled database schema migrations in `supabase/migrations/`
-- **Seed Data**: Sample data for development in `supabase/seed-data/`
+- **Data Access**: Supabase client (`@supabase/supabase-js`) in the API, authenticated with the Supabase service role key from environment variables (server-side only)
+- **Schema**: `db/01_schema.sql` creates the Specification 2 tables: `category`, `maker`, `platform`, `product`, `product_platform`, `retailer`, `listing`
+- **Seed Data**: `db/02_seed.sql` inserts sample data; run it after the schema script
+- **Data Model**: See `db/README.md`
 
 ### Communication Between Frontend and Backend
 

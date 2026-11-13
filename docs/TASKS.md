@@ -8,7 +8,7 @@ This document breaks down each accepted Version 1 user story into realistic deve
 **Related User Stories**: All
 **Description**: Set up the repository structure with client, API, database, and documentation directories.
 **Acceptance Criteria**:
-- Repository structure matches the defined layout (client/, api/, supabase/, docs/)
+- Repository structure matches the defined layout (client/, api/, db/, docs/)
 - .gitignore file is created with appropriate exclusions
 - README.md is created with project overview and setup instructions
 - Documentation folder structure is created (docs/PRD.md, docs/TASKS.md, docs/WORKSPACE_RULES.md)
@@ -37,40 +37,41 @@ This document breaks down each accepted Version 1 user story into realistic deve
 **Description**: Configure Supabase connection and create initial database schema.
 **Acceptance Criteria**:
 - Supabase project is created
-- Database connection is configured in the API
-- Migration files are created for core tables (products, sellers, listings)
-- Seed data directory structure is created
+- `db/01_schema.sql` creates all Specification 2 tables (category, maker, platform, product, product_platform, retailer, listing)
+- `db/02_seed.sql` inserts 3–5 sample rows per table with valid foreign keys
+- Both scripts run in order on a clean Supabase project without manual edits
+- Database connection is configured in the API using `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` environment variables
 - Database connection can be established successfully
 
 ## Database and Data Model Tasks
 
 ### TASK-04 – Create Product Data Model
 **Related User Stories**: US-01, US-02, US-03, US-23
-**Description**: Define and implement the Product table schema with core fields.
+**Description**: Define and implement the product, category, maker, platform, and product_platform tables.
 **Acceptance Criteria**:
-- Products table is created with fields: id, name, category/type, developer/manufacturer, release_year, image_url, description
-- Migration file is created and applied
-- Database constraints (primary key, required fields) are defined
-- Seed data includes sample products for games, consoles, and accessories
+- `category` table is created with fields: category_id, name, description, display_order
+- `maker` table is created with fields: maker_id, name, website_url, description
+- `platform` table is created with fields: platform_id, name, manufacturer, release_year
+- `product` table is created with fields: product_id, category_id (FK → category), maker_id (FK → maker), name, image_url, release_year, description
+- `product_platform` table is created with fields: product_platform_id, product_id (FK → product), platform_id (FK → platform)
+- Tables are defined in `db/01_schema.sql` with primary keys, foreign keys, and required fields
+- `db/02_seed.sql` includes sample games, consoles, and accessories with their categories, makers, and platforms
 
-### TASK-05 – Create Seller Data Model
+### TASK-05 – Create Retailer Data Model
 **Related User Stories**: US-08, US-09, US-29
-**Description**: Define and implement the Seller table schema with core fields.
+**Description**: Define and implement the retailer table.
 **Acceptance Criteria**:
-- Sellers table is created with fields: id, name, website_url
-- Migration file is created and applied
-- Database constraints (primary key, required fields) are defined
-- Seed data includes sample sellers
+- `retailer` table is created with fields: retailer_id, name, website_url, active
+- Table is defined in `db/01_schema.sql` with primary key and required fields
+- `db/02_seed.sql` includes sample retailers
 
 ### TASK-06 – Create Listing Data Model
 **Related User Stories**: US-08, US-09, US-13, US-16, US-29
-**Description**: Define and implement the Listing table schema linking products and sellers.
+**Description**: Define and implement the listing table linking products and retailers.
 **Acceptance Criteria**:
-- Listings table is created with fields: id, product_id, seller_id, price, condition, availability, external_url
-- Foreign key relationships to products and sellers tables are established
-- Migration file is created and applied
-- Database constraints (primary key, foreign keys, required fields) are defined
-- Seed data includes sample listings linking products to sellers
+- `listing` table is created with fields: listing_id, product_id (FK → product), retailer_id (FK → retailer), price, condition, in_stock, discount_amount, product_url, last_updated
+- Table is defined in `db/01_schema.sql` with primary key, foreign keys, and required fields
+- `db/02_seed.sql` includes sample listings linking products to retailers
 
 ## Search Functionality Tasks
 
@@ -169,10 +170,9 @@ This document breaks down each accepted Version 1 user story into realistic deve
 **Related User Stories**: US-13
 **Description**: Ensure availability status is properly stored and retrieved.
 **Acceptance Criteria**:
-- Availability field in listings table accepts values (in_stock, out_of_stock, limited)
-- Database migration adds availability field if not present
-- Seed data includes varied availability statuses
-- API endpoint returns availability status for each listing
+- `listing.in_stock` (boolean) stores whether the listing is currently available
+- Seed data includes both in-stock and out-of-stock listings
+- API endpoint returns availability (`in_stock`) for each listing
 
 ### TASK-17 – Display Availability in UI
 **Related User Stories**: US-13
@@ -232,7 +232,7 @@ This document breaks down each accepted Version 1 user story into realistic deve
 **Description**: Create API endpoint to retrieve detailed product information.
 **Acceptance Criteria**:
 - GET /api/products/:id endpoint returns full product details
-- Response includes all product fields (name, category, developer/manufacturer, release_year, image_url, description)
+- Response includes all product fields (name, category, maker, platforms, release_year, image_url, description)
 - API returns 404 if product does not exist
 - API returns 200 with product data if found
 
@@ -241,21 +241,20 @@ This document breaks down each accepted Version 1 user story into realistic deve
 **Description**: Create React page to display comprehensive product information.
 **Acceptance Criteria**:
 - Product details page displays all product information
-- Page shows product name, image, category, developer/manufacturer, release year, and description
+- Page shows product name, image, category, maker, platforms, release year, and description
 - Page is accessible from search results by clicking on a product
 - Page includes all seller listings for the product
 - Page handles missing or incomplete product data gracefully
 
 ## External Navigation Tasks
 
-### TASK-24 – Implement External URL Field in Listings
+### TASK-24 – Implement Product URL Field in Listings
 **Related User Stories**: US-29
-**Description**: Ensure external seller URLs are properly stored and retrieved.
+**Description**: Ensure retailer product URLs are properly stored and retrieved.
 **Acceptance Criteria**:
-- External URL field in listings table stores seller website URLs
-- Database migration adds external_url field if not present
-- Seed data includes valid external URLs
-- API endpoint returns external_url for each listing
+- `listing.product_url` stores the retailer's URL for the listing
+- Seed data includes valid product URLs
+- API endpoint returns product_url for each listing
 
 ### TASK-25 – Implement Go to Seller Website Functionality
 **Related User Stories**: US-29

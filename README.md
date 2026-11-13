@@ -45,10 +45,12 @@ The first version focuses on core search and comparison functionality without re
 ```
 GamePriceCheck/
 ├── client/           # React/Vite frontend
-├── api/              # Express/Node backend
-├── supabase/         # Database migrations, schema, and seed data
-│   ├── migrations/
-│   └── seed-data/
+├── api/              # Express/Node backend (see api/README.md, api/openapi.yaml)
+├── db/               # Database schema and seed scripts (Specification 2)
+│   ├── 01_schema.sql
+│   ├── 02_seed.sql
+│   └── README.md
+├── tests/            # smoke.sh: cURL smoke tests for the API
 ├── docs/             # Project documentation
 │   ├── PRD.md
 │   ├── TASKS.md
@@ -61,14 +63,14 @@ GamePriceCheck/
 
 ### Prerequisites
 
-- Node.js (v18 or higher recommended)
+- Node.js 22 or higher
 - npm or yarn
 - Git
 - Supabase account (for database)
 
 ### Environment Variables
 
-Create `.env` files in both the `client` and `api` directories. See `.env.example` files for required variables.
+Copy `api/.env.example` to `api/.env` and set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `ADMIN_API_KEY` (see [api/README.md](api/README.md)). `api/.env` is git-ignored. The client needs no variables.
 
 ### Running the Client
 
@@ -78,7 +80,9 @@ npm install
 npm run dev
 ```
 
-The client will typically start at `http://localhost:5173`.
+The client starts at `http://localhost:5173`. It gets all data from the Express API with `fetch` (Vite forwards `/api` to `http://localhost:3000`), so start the API first. The client never talks to Supabase directly.
+
+Other client scripts: `npm test`, `npm run lint`, `npm run format:check`, `npm run build`.
 
 ### Running the API
 
@@ -88,17 +92,22 @@ npm install
 npm run dev
 ```
 
-The API will typically start at `http://localhost:3000`.
+The API starts at `http://localhost:3000`. Endpoints are documented in [api/openapi.yaml](api/openapi.yaml). With the API running, `BASE_URL=http://localhost:3000 ADMIN_API_KEY=... bash tests/smoke.sh` runs the smoke tests.
 
 ### Database Setup
 
-Database migrations and seed data are located in the `supabase/` directory. Follow Supabase documentation to apply migrations and set up your local development database.
+The database scripts are in the `db/` directory. In your Supabase project's SQL Editor, run them in this order:
+
+1. `db/01_schema.sql` – creates the tables, constraints, and Row Level Security policies
+2. `db/02_seed.sql` – inserts sample categories, makers, platforms, products, retailers, and listings
+
+See [db/README.md](db/README.md) for the data model.
+
+The API connects to Supabase with `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `api/.env` (see `api/.env.example`). The service role key is server-side only and must never be committed or used in the client.
 
 ## Project Status
 
-**Current Status**: Scaffolding / Initial Development
-
-The project is currently in the scaffolding phase. The foundation has been created for iterative development of Version 1 features.
+**Current Status**: Prototype 2 – database, React client and local Express API connected (`React client -> Express API -> Supabase`).
 
 ## Important Notes
 

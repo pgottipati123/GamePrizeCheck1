@@ -1,0 +1,48 @@
+.frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  color: rgb(255 255 255 / 0.92);
+  background: linear-gradient(135deg, #312e81, #6d28d9);
+}
+
+.games {
+  background: linear-gradient(135deg, #1e3a8a, #7c3aed);
+}
+
+.consoles {
+  background: linear-gradient(135deg, #0f172a, #0e7490);
+}
+
+.accessories {
+  background: linear-gradient(135deg, #3f1d38, #be185d);
+}
+
+.icon {
+  width: 38%;
+  fill: currentColor;
+}
+
+.detail .icon {
+  width: 34%;
+}
+
+.caption {
+  padding: 0 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+.photo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #fff;
+}
