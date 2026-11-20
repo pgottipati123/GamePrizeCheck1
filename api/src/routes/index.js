@@ -13,6 +13,7 @@ export function createApiRouter({ config, repository }) {
   router.get('/products/:id/listings', controller.listProductListings);
   router.get('/filters', controller.getFilters);
   router.get('/deals', controller.listDeals);
+  router.post('/notifications', controller.createNotification);
   router.patch('/listings/:id', requireAdminKey(config), controller.updateListing);
 
   return router;

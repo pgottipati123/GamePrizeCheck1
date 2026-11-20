@@ -7,6 +7,7 @@ import {
   idParam,
   listingsQuery,
   listingUpdate,
+  notificationCreate,
   productsQuery,
 } from '../schemas.js';
 
@@ -89,6 +90,24 @@ export function createCatalogController(repository) {
           price: Number(listing.price),
           discount_amount: Number(listing.discount_amount),
         },
+      });
+    },
+
+    async createNotification(req, res) {
+      const body = validate(notificationCreate, req.body ?? {}, 'request body');
+      if (!(await repository.productExists(body.product_id))) {
+        throw new HttpError(404, `Product not found: ${body.product_id}`);
+      }
+      const { notification, created } = await repository.createNotification(body);
+      // Contact details are never echoed back; only the channel is returned.
+      res.status(created ? 201 : 200).json({
+        data: {
+          notification_id: notification.notification_id,
+          product_id: notification.product_id,
+          channel: notification.email ? 'email' : 'phone',
+          created_at: notification.created_at,
+        },
+        created,
       });
     },
   };

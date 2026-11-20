@@ -1,0 +1,48 @@
+# GamePriceCheck API on AWS Lambda + API Gateway (HTTP API).
+# Deploy from the api/ directory with Serverless Framework v3:
+#   npx serverless@3 deploy --region us-east-1
+# Values come from api/.env (git-ignored; loaded via useDotenv) or the shell.
+# The service role key is stored only in the Lambda's environment variables.
+service: gamepricecheck-api
+frameworkVersion: '3'
+useDotenv: true
+
+provider:
+  name: aws
+  # Serverless v3's config schema predates nodejs22.x, so `serverless deploy`
+  # prints an "Invalid configuration ... provider.runtime" warning; it is safe to
+  # ignore (AWS Lambda supports nodejs22.x).
+  runtime: nodejs22.x
+  region: ${opt:region, 'us-east-1'}
+  stage: ${opt:stage, 'prod'}
+  memorySize: 512
+  timeout: 15
+  # AWS Academy Learner Lab cannot create IAM roles, so the function uses the
+  # pre-made LabRole. On a personal AWS account, set LAMBDA_ROLE_ARN to another
+  # role ARN or delete this line to let Serverless create one.
+  iam:
+    role: ${env:LAMBDA_ROLE_ARN, 'arn:aws:iam::${aws:accountId}:role/LabRole'}
+  environment:
+    NODE_ENV: production
+    SUPABASE_URL: ${env:SUPABASE_URL}
+    SUPABASE_SERVICE_ROLE_KEY: ${env:SUPABASE_SERVICE_ROLE_KEY}
+    ADMIN_API_KEY: ${env:ADMIN_API_KEY, ''}
+    CORS_ORIGIN: ${env:CORS_ORIGIN, 'http://localhost:5173'}
+    RATE_LIMIT_PER_MINUTE: ${env:RATE_LIMIT_PER_MINUTE, '120'}
+
+functions:
+  api:
+    handler: src/lambda.handler
+    events:
+      - httpApi: '*'
+
+package:
+  patterns:
+    - '!.env*'
+    - '!test/**'
+    - '!node_modules/.vite/**'
+    - '!node_modules/.vitest-cache/**'
+    - '!coverage/**'
+    - '!eslint.config.js'
+    - '!openapi.yaml'
+    - '!README.md'

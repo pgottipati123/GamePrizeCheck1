@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Smoke tests for the GamePriceCheck API (Prototype 2, Step 3).
+# Smoke tests for the GamePriceCheck API (Prototype 3).
 #
 # Usage:
 #   BASE_URL=http://localhost:3000 ADMIN_API_KEY=... bash tests/smoke.sh
@@ -10,7 +10,8 @@
 #
 # Uses the fixed seed IDs from db/02_seed.sql. The write test sets listing
 # 70000000-...-000000000002 back to its seed values (52.99, used, in stock),
-# so running it repeatedly leaves the database unchanged.
+# so running it repeatedly leaves the database unchanged. The notification test
+# uses smoke-test@example.com; repeat runs reuse that one row (201 first, then 200).
 # Exits non-zero if any check fails.
 
 set -uo pipefail
@@ -29,12 +30,13 @@ BODY_FILE="$(mktemp)"
 trap 'rm -f "$BODY_FILE"' EXIT
 
 # check NAME EXPECTED_STATUS EXPECTED_SUBSTRING curl-args...
+# EXPECTED_STATUS may list alternatives, e.g. "200|201".
 check() {
   local name="$1" expected_status="$2" expected_text="$3"
   shift 3
   local status
   status="$(curl -sS -o "$BODY_FILE" -w '%{http_code}' --max-time 15 "$@")" || status="000"
-  if [[ "$status" == "$expected_status" ]] && grep -qF -- "$expected_text" "$BODY_FILE"; then
+  if [[ "$status" =~ ^($expected_status)$ ]] && grep -qF -- "$expected_text" "$BODY_FILE"; then
     PASS=$((PASS + 1))
     printf 'PASS  %-55s %s\n' "$name" "$status"
   else
@@ -85,6 +87,17 @@ else
 fi
 check "PATCH /api/listings/:id without key -> 401" 401 'X-Admin-Key' \
   -X PATCH "$API/listings/$LISTING_ID" -H 'Content-Type: application/json' -d '{"in_stock":true}'
+
+# Public write: price-change notification request (no account needed)
+check "POST /api/notifications (email)" '201|200' '"channel":"email"' \
+  -X POST "$API/notifications" -H 'Content-Type: application/json' \
+  -d "{\"product_id\":\"$PRODUCT_ID\",\"email\":\"smoke-test@example.com\"}"
+check "POST /api/notifications invalid contact -> 400" 400 'contact' \
+  -X POST "$API/notifications" -H 'Content-Type: application/json' \
+  -d "{\"product_id\":\"$PRODUCT_ID\"}"
+check "POST /api/notifications unknown product -> 404" 404 'not found' \
+  -X POST "$API/notifications" -H 'Content-Type: application/json' \
+  -d "{\"product_id\":\"$MISSING_ID\",\"email\":\"smoke-test@example.com\"}"
 
 echo "Passed: $PASS  Failed: $FAIL"
 [[ "$FAIL" -eq 0 ]]

@@ -385,6 +385,34 @@ This document breaks down each accepted Version 1 user story into realistic deve
 - README includes known issues or limitations
 - README is accurate and up to date
 
+## Prototype 3 Tasks (Level 3 Specification)
+
+### TASK-38 – Move Price Comparison onto the Product Page
+**Acceptance Criteria**:
+- The Compare Prices page and navigation tab are removed; old `/compare/:id` links redirect to `/product/:id`
+- The Product page lists every retailer listing with price, discount, condition, availability, and retailer, with sorting and condition filters
+
+### TASK-39 – Confirm Before Redirecting to a Retailer
+**Acceptance Criteria**:
+- Selecting "Go to {retailer}" opens a confirmation that the user is leaving GamePriceCheck
+- Continue opens the listing's `product_url` in a new tab (`noopener noreferrer`); Cancel or Escape closes it
+
+### TASK-40 – Favorites / Watchlist
+**Acceptance Criteria**:
+- Favorites / Watchlist is in the main navigation
+- Users can save and remove products without an account; saved products show live data from the API
+- Selecting a saved product returns to its Product page
+
+### TASK-41 – Price-Change Notification Requests
+**Acceptance Criteria**:
+- `price_notification` table stores product_id plus exactly one of email or phone (RLS on, no public policies)
+- `POST /api/notifications` validates input and returns 201 (new), 200 (duplicate), 400, or 404
+- The Product page and Favorites page offer an optional email/phone form with client-side validation
+
+### TASK-42 – Product Images
+**Acceptance Criteria**:
+- Every seeded product has an `image_url`, shown on result cards, Favorites, and the Product page
+
 ## Site Map Guidance
 
 For the hand-drawn site map assignment, consider including the following major screens:

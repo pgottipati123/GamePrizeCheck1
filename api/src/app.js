@@ -17,7 +17,7 @@ export function createApp(config, { repository = createSupabaseRepository(config
   app.use(
     cors({
       origin: config.corsOrigins,
-      methods: ['GET', 'PATCH'],
+      methods: ['GET', 'POST', 'PATCH'],
       allowedHeaders: ['Content-Type', 'X-Admin-Key'],
     }),
   );

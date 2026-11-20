@@ -67,3 +67,19 @@ export const listingUpdate = z
       .optional(),
   })
   .refine((body) => Object.keys(body).length > 0, 'provide at least one field to update');
+
+const phone = z.preprocess(
+  (value) => (typeof value === 'string' ? value.replace(/[\s().-]/g, '') : value),
+  z.string().regex(/^\+?[0-9]{10,15}$/, 'must be 10–15 digits, optionally starting with +'),
+);
+
+export const notificationCreate = z
+  .strictObject({
+    product_id: z.uuid('must be a valid UUID'),
+    email: z.email('must be a valid email address').max(254).toLowerCase().optional(),
+    phone: phone.optional(),
+  })
+  .refine((body) => (body.email === undefined) !== (body.phone === undefined), {
+    message: 'provide either email or phone (exactly one)',
+    path: ['contact'],
+  });

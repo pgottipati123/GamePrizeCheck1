@@ -1,4 +1,4 @@
--- GamePriceCheck Prototype 2: database schema (Specification 2)
+-- GamePriceCheck Prototype 3: database schema (Level 3 Specification)
 -- Run on a clean Supabase project before db/02_seed.sql.
 -- Field names follow the Analyst specification exactly.
 -- Safe to re-run: objects are created only if they do not already exist.
@@ -97,6 +97,25 @@ create index if not exists listing_retailer_id_idx on public.listing (retailer_i
 create index if not exists listing_price_idx on public.listing (price);
 create index if not exists listing_condition_idx on public.listing (condition);
 
+-- ---------------------------------------------------------------------------
+-- price_notification: optional price-change notification request for one
+-- product. No user profile is required: the request stores either an email
+-- address or a phone number (exactly one), per the Level 3 Specification.
+-- ---------------------------------------------------------------------------
+create table if not exists public.price_notification (
+  notification_id uuid primary key default gen_random_uuid(),
+  product_id uuid not null references public.product (product_id) on delete cascade,
+  email text check (char_length(email) <= 254 and email ~* '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$'),
+  phone text check (phone ~ '^\+?[0-9]{10,15}$'),
+  created_at timestamptz not null default now(),
+  check (num_nonnulls(email, phone) = 1)
+);
+
+create unique index if not exists price_notification_product_email_key
+  on public.price_notification (product_id, lower(email)) where email is not null;
+create unique index if not exists price_notification_product_phone_key
+  on public.price_notification (product_id, phone) where phone is not null;
+
 -- Keep listing.last_updated current whenever a listing row changes.
 create or replace function public.set_listing_last_updated()
 returns trigger
@@ -119,6 +138,9 @@ create trigger listing_set_last_updated
 -- Catalog data is public and read-only: anyone may SELECT; no INSERT/UPDATE/
 -- DELETE policies exist, so writes are only possible with the service-role key
 -- (server side) or from the Supabase dashboard.
+-- price_notification holds contact details, so it has RLS enabled and NO
+-- policies at all: only the service-role key (the Express API) can read or
+-- write it.
 -- ---------------------------------------------------------------------------
 alter table public.category enable row level security;
 alter table public.maker enable row level security;
@@ -127,6 +149,7 @@ alter table public.product enable row level security;
 alter table public.product_platform enable row level security;
 alter table public.retailer enable row level security;
 alter table public.listing enable row level security;
+alter table public.price_notification enable row level security;
 
 drop policy if exists "Public read access" on public.category;
 create policy "Public read access" on public.category for select to anon, authenticated using (true);

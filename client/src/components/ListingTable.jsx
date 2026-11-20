@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ConditionBadge, DiscountBadge, StockBadge } from './Badges.jsx';
+import RetailerLink from './RetailerLink.jsx';
 import { CONDITION_LABELS, CONDITIONS, formatDateTime, formatPrice } from '../lib/format.js';
 import styles from './ListingTable.module.css';
 
@@ -86,16 +87,11 @@ export default function ListingTable({ listings, bestListingId }) {
                 </>
               )}
             </div>
-            <a
+            <RetailerLink
               className={styles.go}
+              retailer={listing.retailer.name}
               href={listing.product_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Go to ${listing.retailer.name} (opens in a new tab)`}
-            >
-              Go to {listing.retailer.name}
-              <span aria-hidden="true"> ↗</span>
-            </a>
+            />
           </li>
         ))}
       </ul>

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { getSupabase } from '../lib/supabase.js';
 import { HttpError } from '../lib/httpError.js';
 
@@ -11,6 +12,8 @@ export const TABLES = {
   retailers: 'retailer',
   listings: 'listing',
 };
+
+const NOTIFICATION_COLUMNS = 'notification_id, product_id, email, phone, created_at';
 
 const LISTING_COLUMNS =
   'listing_id, product_id, retailer_id, price, condition, in_stock, discount_amount, product_url, last_updated';
@@ -49,6 +52,40 @@ export function createSupabaseRepository(config) {
       if (error) throw dbError('updating the listing', error);
       return data;
     },
+
+    async productExists(productId) {
+      const { data, error } = await db()
+        .from('product')
+        .select('product_id')
+        .eq('product_id', productId)
+        .maybeSingle();
+      if (error) throw dbError('reading product', error);
+      return Boolean(data);
+    },
+
+    /** Returns { notification, created }; an identical existing request is reused. */
+    async createNotification({ product_id, email = null, phone = null }) {
+      const findExisting = async () => {
+        let query = db().from('price_notification').select(NOTIFICATION_COLUMNS);
+        query = query.eq('product_id', product_id);
+        query = email ? query.ilike('email', email) : query.eq('phone', phone);
+        const { data, error } = await query.limit(1).maybeSingle();
+        if (error) throw dbError('reading notifications', error);
+        return data;
+      };
+
+      const existing = await findExisting();
+      if (existing) return { notification: existing, created: false };
+
+      const { data, error } = await db()
+        .from('price_notification')
+        .insert({ product_id, email, phone })
+        .select(NOTIFICATION_COLUMNS)
+        .single();
+      if (error?.code === '23505') return { notification: await findExisting(), created: false };
+      if (error) throw dbError('saving the notification request', error);
+      return { notification: data, created: true };
+    },
   };
 }
 
@@ -64,6 +101,27 @@ export function createMemoryRepository(seed) {
       if (!listing) return null;
       Object.assign(listing, changes, { last_updated: new Date().toISOString() });
       return structuredClone(listing);
+    },
+    async productExists(productId) {
+      return data.products.some((row) => row.product_id === productId);
+    },
+    async createNotification({ product_id, email = null, phone = null }) {
+      data.notifications ??= [];
+      const existing = data.notifications.find(
+        (row) =>
+          row.product_id === product_id &&
+          (email ? row.email?.toLowerCase() === email.toLowerCase() : row.phone === phone),
+      );
+      if (existing) return { notification: structuredClone(existing), created: false };
+      const notification = {
+        notification_id: randomUUID(),
+        product_id,
+        email,
+        phone,
+        created_at: new Date().toISOString(),
+      };
+      data.notifications.push(notification);
+      return { notification: structuredClone(notification), created: true };
     },
   };
 }

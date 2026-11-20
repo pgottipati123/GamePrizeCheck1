@@ -25,13 +25,24 @@ export default function AboutPage() {
             maker/developer, and release year, then sort by price, discount, or release date.
           </li>
           <li>
-            <strong>View product and compare prices.</strong> Open a product to see its image,
-            maker, best price, discount, condition, and availability, then compare every
-            retailer&apos;s offer side by side. The best in-stock price is highlighted.
+            <strong>Product page and price comparison.</strong> Open a product to see its image,
+            maker, and details. The same page compares every retailer&apos;s listing side by side:
+            price, discount, condition, and availability. The best price is highlighted.
           </li>
           <li>
-            <strong>Go to the retailer.</strong> Select &ldquo;Go to&rdquo; on an offer to open the
-            retailer&apos;s website in a new tab and complete your purchase there.
+            <strong>Go to the retailer.</strong> Select &ldquo;Go to&rdquo; on a listing. We confirm
+            that you are leaving GamePriceCheck, then open the retailer&apos;s website in a new tab
+            where you complete your purchase.
+          </li>
+          <li>
+            <strong>Favorites / Watchlist.</strong> Choose &ldquo;Save to Favorites&rdquo; on a
+            product to keep it in your Favorites / Watchlist tab, then select it any time to return
+            to its Product page. Your list is stored in this browser, so no account is needed.
+          </li>
+          <li>
+            <strong>Price-change alerts (optional).</strong> Enter an email address or phone number
+            on a product or saved item to ask for price-change notifications. No profile or login is
+            required.
           </li>
         </ol>
       </section>

@@ -1,15 +1,17 @@
 openapi: 3.0.3
 info:
   title: GamePriceCheck API
-  version: 0.2.0
+  version: 0.3.0
   license:
     name: UNLICENSED (CSU Chico course project, not for redistribution)
     url: https://github.com/pgottipati123/GamePrizeCheck1
   description: |
-    Local Express API for GamePriceCheck Prototype 2. It reads the Specification 2
-    Supabase database (category, maker, platform, product, product_platform,
-    retailer, listing) with the server-side service role key and serves it to the
-    React client. Architecture: React client -> Express API -> Supabase.
+    Express API for GamePriceCheck Prototype 3. It runs as its own process,
+    separate from the React client and the database. It reads the Level 3
+    Specification Supabase database (category, maker, platform, product,
+    product_platform, retailer, listing, price_notification) with the
+    server-side service role key and serves it to the React client.
+    Architecture: React client -> Express API -> Supabase.
 
     Only listings from active retailers are returned. GamePriceCheck does not sell
     products; "Go to retailer" links use each listing's `product_url`.
@@ -23,6 +25,8 @@ tags:
     description: Categories, product search/browse, details, filter options and deals (public reads).
   - name: Listings
     description: Retailer listings for price comparison, plus the admin-only listing update.
+  - name: Notifications
+    description: Optional price-change notification requests (email or phone, no account).
 
 paths:
   /api/health:
@@ -352,6 +356,71 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
 
+  /api/notifications:
+    post:
+      tags: [Notifications]
+      summary: Request price-change notifications for a product
+      description: |
+        Public write used by the Product page and Favorites / Watchlist. Send the
+        product and exactly one contact method: `email` or `phone`. No account is
+        required. Phone numbers may include spaces, dashes, dots or parentheses;
+        they are stored as digits with an optional leading `+`. Repeating an
+        identical request (same product and contact; email is case-insensitive)
+        returns the existing request with status 200 instead of creating a
+        duplicate. Contact details are never returned by the API.
+      operationId: createNotification
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NotificationRequest' }
+            examples:
+              email:
+                summary: Email notification
+                value: { product_id: 40000000-0000-4000-8000-000000000001, email: fan@example.com }
+              phone:
+                summary: Phone (text) notification
+                value: { product_id: 40000000-0000-4000-8000-000000000003, phone: (530) 555-0123 }
+      responses:
+        '201':
+          description: A new notification request was saved.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationResponse' }
+              example:
+                data:
+                  notification_id: 0f6d3c52-8a51-4f53-9b1e-3d2f6a7c9e10
+                  product_id: 40000000-0000-4000-8000-000000000001
+                  channel: email
+                  created_at: '2026-11-20T04:30:00.000000+00:00'
+                created: true
+        '200':
+          description: An identical request already existed; it is returned unchanged.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationResponse' }
+              example:
+                data:
+                  notification_id: 80000000-0000-4000-8000-000000000001
+                  product_id: 40000000-0000-4000-8000-000000000001
+                  channel: email
+                  created_at: '2026-11-20T04:00:00.000000+00:00'
+                created: false
+        '400':
+          description: Invalid body (bad UUID, invalid email/phone, both or neither contact, or unknown fields).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example:
+                error:
+                  message: 'Invalid request body: contact: provide either email or phone (exactly one)'
+                  details:
+                    - field: contact
+                      message: provide either email or phone (exactly one)
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
 components:
   securitySchemes:
     AdminKey:
@@ -472,6 +541,33 @@ components:
         in_stock: { type: boolean }
         condition: { $ref: '#/components/schemas/Condition' }
         product_url: { type: string, format: uri, pattern: '^https?://' }
+    NotificationRequest:
+      type: object
+      additionalProperties: false
+      required: [product_id]
+      description: Provide exactly one of `email` or `phone`.
+      properties:
+        product_id: { type: string, format: uuid }
+        email: { type: string, format: email, maxLength: 254 }
+        phone:
+          type: string
+          description: 10–15 digits, optionally starting with `+`; spaces, dashes, dots and parentheses are ignored.
+          example: '+15305550123'
+    NotificationResponse:
+      type: object
+      required: [data, created]
+      properties:
+        data:
+          type: object
+          required: [notification_id, product_id, channel, created_at]
+          properties:
+            notification_id: { type: string, format: uuid }
+            product_id: { type: string, format: uuid }
+            channel: { type: string, enum: [email, phone] }
+            created_at: { type: string, format: date-time }
+        created:
+          type: boolean
+          description: true when a new request was saved (201), false when it already existed (200).
     ProductSummary:
       type: object
       properties:

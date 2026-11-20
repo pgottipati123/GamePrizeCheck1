@@ -45,7 +45,18 @@ function route(url) {
   return respond(404, { error: { message: `Route not found: GET ${pathname}` } });
 }
 
-export async function fakeFetch(url) {
+export const notificationRequests = [];
+
+export async function fakeFetch(url, init = {}) {
+  const { pathname } = new URL(String(url), 'http://localhost');
+  if (init.method === 'POST' && pathname === '/api/notifications') {
+    const body = JSON.parse(init.body);
+    notificationRequests.push(body);
+    if (!fixtures.products.some((p) => p.product_id === body.product_id)) {
+      return respond(404, { error: { message: 'Product not found' } });
+    }
+    return respond(201, { data: { product_id: body.product_id }, created: true });
+  }
   return route(String(url));
 }
 

@@ -176,6 +176,51 @@ describe('PATCH /api/listings/:id', () => {
   });
 });
 
+describe('POST /api/notifications', () => {
+  const post = (app, body) => request(app).post('/api/notifications').send(body);
+
+  it('creates an email request with 201 and reuses an identical one with 200', async () => {
+    const app = appWith();
+    const body = { product_id: ZELDA.product_id, email: 'Fan@Example.com' };
+    const first = await post(app, body);
+    expect(first.status).toBe(201);
+    expect(first.body).toMatchObject({
+      created: true,
+      data: { product_id: ZELDA.product_id, channel: 'email' },
+    });
+    expect(JSON.stringify(first.body)).not.toMatch(/example\.com/i);
+    const again = await post(app, { ...body, email: 'fan@example.com' });
+    expect(again.status).toBe(200);
+    expect(again.body.created).toBe(false);
+    expect(again.body.data.notification_id).toBe(first.body.data.notification_id);
+  });
+
+  it('accepts a phone number with common punctuation', async () => {
+    const res = await post(appWith(), { product_id: ZELDA.product_id, phone: '(530) 555-0123' });
+    expect(res.status).toBe(201);
+    expect(res.body.data.channel).toBe('phone');
+  });
+
+  it.each([
+    [{}, 'product_id'],
+    [{ product_id: 'abc', email: 'a@b.co' }, 'product_id'],
+    [{ product_id: ZELDA.product_id }, 'contact'],
+    [{ product_id: ZELDA.product_id, email: 'a@b.co', phone: '5305550123' }, 'contact'],
+    [{ product_id: ZELDA.product_id, email: 'not-an-email' }, 'email'],
+    [{ product_id: ZELDA.product_id, phone: '12ab' }, 'phone'],
+    [{ product_id: ZELDA.product_id, email: 'a@b.co', name: 'x' }, 'request body'],
+  ])('rejects invalid body %j with 400', async (body, field) => {
+    const res = await post(appWith(), body);
+    expect(res.status).toBe(400);
+    expect(res.body.error.details.map((d) => d.field)).toContain(field);
+  });
+
+  it('returns 404 for an unknown product', async () => {
+    const res = await post(appWith(), { product_id: MISSING, email: 'a@b.co' });
+    expect(res.status).toBe(404);
+  });
+});
+
 describe('unknown routes', () => {
   it('return a JSON 404', async () => {
     const res = await request(appWith()).get('/api/nope');

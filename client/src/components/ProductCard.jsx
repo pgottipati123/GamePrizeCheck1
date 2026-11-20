@@ -15,7 +15,9 @@ export default function ProductCard({ product }) {
             {product.category.name} &middot; {product.release_year}
           </p>
           <h3 className={styles.name}>{product.name}</h3>
-          <p className={styles.maker}>{product.maker.name}</p>
+          <p className={styles.maker}>
+            {product.maker.name} &middot; {product.platforms.map((p) => p.name).join(', ')}
+          </p>
           <div className={styles.priceRow}>
             <span className={styles.from}>From</span>
             <span className={styles.price}>{formatPrice(product.lowestPrice)}</span>

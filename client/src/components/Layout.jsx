@@ -32,11 +32,11 @@ export default function Layout() {
           <NavLink to="/search" className={navClass}>
             Search / Browse
           </NavLink>
-          <NavLink to="/compare" className={navClass}>
-            Compare Prices
-          </NavLink>
           <NavLink to="/filter" className={navClass}>
             Filter / Sort
+          </NavLink>
+          <NavLink to="/favorites" className={navClass}>
+            Favorites / Watchlist
           </NavLink>
           <NavLink to="/about" className={navClass}>
             About / Help
@@ -51,7 +51,7 @@ export default function Layout() {
           GamePriceCheck compares prices for physical games, consoles, and accessories. We do not
           sell products; purchases are completed on each retailer&apos;s website.
         </p>
-        <p>Prototype 2 &middot; Prices shown are sample data.</p>
+        <p>Prototype 3 &middot; Prices shown are sample data.</p>
       </footer>
     </div>
   );

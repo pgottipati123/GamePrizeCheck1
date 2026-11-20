@@ -1,9 +1,14 @@
+import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import ProductImage from '../components/ProductImage.jsx';
 import { ConditionBadge, DiscountBadge, StockBadge } from '../components/Badges.jsx';
+import ListingTable from '../components/ListingTable.jsx';
+import NotifyForm from '../components/NotifyForm.jsx';
+import RetailerLink from '../components/RetailerLink.jsx';
 import NotFoundPage from './NotFoundPage.jsx';
 import LoadState from '../components/LoadState.jsx';
 import { useApi } from '../lib/useApi.js';
+import { useFavorites } from '../lib/favorites.js';
 import { formatPrice } from '../lib/format.js';
 import usePageTitle from '../lib/usePageTitle.js';
 import styles from './ProductPage.module.css';
@@ -12,6 +17,8 @@ export default function ProductPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: product, error, loading, retry } = useApi(`/products/${encodeURIComponent(id)}`);
+  const { isFavorite, add, remove } = useFavorites();
+  const [showAlerts, setShowAlerts] = useState(false);
   usePageTitle(loading ? 'Loading product' : product ? product.name : 'Product not found');
 
   if (loading || (error && ![400, 404].includes(error.status))) {
@@ -33,6 +40,7 @@ export default function ProductPage() {
   }
 
   const best = product.lowestPriceListing;
+  const saved = isFavorite(product.product_id);
   const savings = product.highestPrice - product.lowestPrice;
 
   return (
@@ -91,24 +99,53 @@ export default function ProductPage() {
                 {best.condition.charAt(0).toUpperCase() + best.condition.slice(1)} at{' '}
                 {best.retailer.name} · <StockBadge inStock={best.in_stock} />
               </p>
-              <a
+              <RetailerLink
                 className={styles.bestGo}
+                retailer={best.retailer.name}
                 href={best.product_url}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Go to {best.retailer.name} <span aria-hidden="true">↗</span>
-              </a>
+              />
             </div>
           ) : (
             <p className={styles.bestMeta}>No retailer currently lists this product.</p>
+          )}
+
+          <div className={styles.watch}>
+            {saved ? (
+              <>
+                <button
+                  type="button"
+                  className={styles.saved}
+                  onClick={() => remove(product.product_id)}
+                >
+                  ★ Saved to Favorites
+                </button>
+                <Link to="/favorites">View Favorites / Watchlist</Link>
+              </>
+            ) : (
+              <button type="button" className={styles.save} onClick={() => add(product.product_id)}>
+                ☆ Save to Favorites
+              </button>
+            )}
+            <button
+              type="button"
+              className={styles.alertToggle}
+              aria-expanded={showAlerts}
+              onClick={() => setShowAlerts((open) => !open)}
+            >
+              Price-change alerts
+            </button>
+          </div>
+          {showAlerts && (
+            <div className={styles.alerts}>
+              <NotifyForm productId={product.product_id} productName={product.name} />
+            </div>
           )}
         </div>
       </div>
 
       {best && (
         <section aria-labelledby="compare-heading" className={styles.compare}>
-          <h2 id="compare-heading">Retailer offers</h2>
+          <h2 id="compare-heading">Compare prices</h2>
           <p className={styles.compareIntro}>
             {product.listings.length} offers from {product.retailerCount} retailers · prices from{' '}
             {formatPrice(product.lowestPrice)} to {formatPrice(product.highestPrice)}
@@ -121,9 +158,7 @@ export default function ProductPage() {
               <ConditionBadge key={condition} condition={condition} />
             ))}
           </p>
-          <Link to={`/compare/${product.product_id}`} className={styles.compareLink}>
-            Compare all {product.listings.length} prices
-          </Link>
+          <ListingTable listings={product.listings} bestListingId={best.listing_id} />
         </section>
       )}
     </article>

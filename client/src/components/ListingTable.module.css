@@ -149,3 +149,10 @@
     justify-content: flex-start;
   }
 }
+
+button.go {
+  border: 0;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}

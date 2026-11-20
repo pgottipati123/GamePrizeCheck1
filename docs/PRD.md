@@ -78,6 +78,15 @@ Version 1 includes the following accepted user stories:
 
 - **US-29 – Go to Seller Website**: As a gamer, I want to select a product listing and be redirected to the seller's website so that I can complete my purchase directly through the seller.
 
+## Prototype 3 Scope Update (Level 3 Specification)
+
+The Level 3 Specification changes the scope as follows; it takes precedence over the Version 1 lists in this document:
+
+- Price comparison is shown on each Product page; there is no separate Compare Prices page or tab.
+- Favorites / Watchlist has its own main navigation tab. Users save products, view them in a list, and select one to return to its Product page. No account is required (the list is stored in the browser).
+- Users may optionally request price-change notifications by giving an email address or phone number, without a user profile. Requests are stored in `price_notification`; sending messages is not implemented in this prototype.
+- GamePriceCheck shows a confirmation before redirecting to an external retailer website.
+
 ## Out of Scope
 
 The following functionality is explicitly excluded from Version 1:
@@ -90,9 +99,8 @@ The following functionality is explicitly excluded from Version 1:
 - Personalized recommendations
 
 ### Saved Products and Favorites
-- Saving favorite products
-- Creating wishlists
-- Watching product listings
+- Saving favorite products (now in scope for Prototype 3; see above)
+- Creating multiple wishlists
 - Saving seller preferences
 
 ### Price History and Analytics
@@ -151,7 +159,7 @@ These features may be considered for future versions but are not part of Version
 
 - **Database**: PostgreSQL via Supabase
 - **Data Access**: Supabase client (`@supabase/supabase-js`) in the API, authenticated with the Supabase service role key from environment variables (server-side only)
-- **Schema**: `db/01_schema.sql` creates the Specification 2 tables: `category`, `maker`, `platform`, `product`, `product_platform`, `retailer`, `listing`
+- **Schema**: `db/01_schema.sql` creates the tables: `category`, `maker`, `platform`, `product`, `product_platform`, `retailer`, `listing`, and (Level 3) `price_notification`
 - **Seed Data**: `db/02_seed.sql` inserts sample data; run it after the schema script
 - **Data Model**: See `db/README.md`
 

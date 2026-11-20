@@ -1,7 +1,8 @@
--- GamePriceCheck Prototype 2: development seed data (Specification 2)
+-- GamePriceCheck Prototype 3: development seed data (Level 3 Specification)
 -- Run after db/01_schema.sql on the same database.
 -- Fixed UUIDs keep every foreign key valid without manual edits.
--- Safe to re-run: rows that already exist (same primary key) are skipped.
+-- Safe to re-run: rows that already exist (same primary key) are skipped,
+-- except product.image_url, which is refreshed so re-running adds images.
 -- Product URLs point at each retailer's real search page for the product.
 
 begin;
@@ -43,29 +44,36 @@ on conflict (platform_id) do nothing;
 
 -- ---------------------------------------------------------------------------
 -- product (5 rows)
+-- Images: game covers from English Wikipedia; hardware photos from Wikimedia
+-- Commons (CC0 / CC BY-SA 4.0).
 -- ---------------------------------------------------------------------------
 insert into public.product (product_id, category_id, maker_id, name, image_url, release_year, description) values
   ('40000000-0000-4000-8000-000000000001',
     '10000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000001',
-    'The Legend of Zelda: Tears of the Kingdom', null, 2023,
+    'The Legend of Zelda: Tears of the Kingdom',
+    'https://upload.wikimedia.org/wikipedia/en/f/fb/The_Legend_of_Zelda_Tears_of_the_Kingdom_cover.jpg', 2023,
     'Open-world action adventure across the skies and depths of Hyrule. Physical game card.'),
   ('40000000-0000-4000-8000-000000000002',
     '10000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000004',
-    'Elden Ring', null, 2022,
+    'Elden Ring',
+    'https://upload.wikimedia.org/wikipedia/en/b/b9/Elden_Ring_Box_art.jpg', 2022,
     'Open-world action RPG set in the Lands Between. PlayStation 5 disc.'),
   ('40000000-0000-4000-8000-000000000003',
     '10000000-0000-4000-8000-000000000002', '20000000-0000-4000-8000-000000000002',
-    'PlayStation 5 Console (Slim, Disc Edition)', null, 2023,
+    'PlayStation 5 Console (Slim, Disc Edition)',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Playstation_5_mod%C3%A8le_slim_%28%C3%A9dition_standard_avec_lecteur_de_disque_amovible.png/500px-Playstation_5_mod%C3%A8le_slim_%28%C3%A9dition_standard_avec_lecteur_de_disque_amovible.png', 2023,
     'Slim PlayStation 5 with Ultra HD Blu-ray disc drive, 1TB SSD, and DualSense controller.'),
   ('40000000-0000-4000-8000-000000000004',
     '10000000-0000-4000-8000-000000000003', '20000000-0000-4000-8000-000000000002',
-    'DualSense Wireless Controller - Midnight Black', null, 2021,
+    'DualSense Wireless Controller - Midnight Black',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Playstation_5_DualSense_controller_in_Midnight_Black%2C_2026-02-07_%28front%29.jpg/500px-Playstation_5_DualSense_controller_in_Midnight_Black%2C_2026-02-07_%28front%29.jpg', 2021,
     'PlayStation 5 controller with haptic feedback and adaptive triggers.'),
   ('40000000-0000-4000-8000-000000000005',
     '10000000-0000-4000-8000-000000000003', '20000000-0000-4000-8000-000000000003',
-    'Xbox Wireless Controller - Carbon Black', null, 2020,
+    'Xbox Wireless Controller - Carbon Black',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Xbox_Series_Controller_Carbon_Black.jpg/500px-Xbox_Series_Controller_Carbon_Black.jpg', 2020,
     'Wireless controller for Xbox Series X|S with textured grips and a hybrid D-pad.')
-on conflict (product_id) do nothing;
+on conflict (product_id) do update set image_url = excluded.image_url;
 
 -- ---------------------------------------------------------------------------
 -- product_platform (5 rows)
@@ -120,5 +128,19 @@ insert into public.listing (listing_id, product_id, retailer_id, price, conditio
     54.99, 'refurbished', true, 15.00,
     'https://www.gamestop.com/search/?q=dualsense+wireless+controller')
 on conflict (listing_id) do nothing;
+
+-- ---------------------------------------------------------------------------
+-- price_notification (3 rows)
+-- Sample requests using reserved example contact details (example.com and the
+-- fictional 555-01xx phone range).
+-- ---------------------------------------------------------------------------
+insert into public.price_notification (notification_id, product_id, email, phone) values
+  ('80000000-0000-4000-8000-000000000001',
+    '40000000-0000-4000-8000-000000000001', 'zelda.fan@example.com', null),
+  ('80000000-0000-4000-8000-000000000002',
+    '40000000-0000-4000-8000-000000000003', null, '+15305550123'),
+  ('80000000-0000-4000-8000-000000000003',
+    '40000000-0000-4000-8000-000000000004', 'collector@example.com', null)
+on conflict (notification_id) do nothing;
 
 commit;

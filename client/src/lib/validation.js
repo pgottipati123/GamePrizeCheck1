@@ -28,3 +28,20 @@ export function validatePriceRange(minPrice, maxPrice) {
     errors.maxPrice = 'Max price must be greater than or equal to min price.';
   return errors;
 }
+
+const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const PHONE = /^\+?[0-9]{10,15}$/;
+
+/** Validates the price-alert contact (matches the API's rules). */
+export function validateContact(channel, rawValue) {
+  const value = rawValue.trim();
+  if (channel === 'email') {
+    if (!value) return 'Enter an email address.';
+    if (value.length > 254 || !EMAIL.test(value)) return 'Enter a valid email address.';
+    return '';
+  }
+  if (!value) return 'Enter a phone number.';
+  if (!PHONE.test(value.replace(/[\s().-]/g, '')))
+    return 'Enter a valid phone number (10–15 digits).';
+  return '';
+}

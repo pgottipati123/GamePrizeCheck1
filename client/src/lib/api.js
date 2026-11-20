@@ -30,3 +30,24 @@ export async function apiGet(path, { signal } = {}) {
   }
   return body;
 }
+
+export async function apiPost(path, payload) {
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    throw new ApiError(0, 'Could not reach the GamePriceCheck API. Is it running?');
+  }
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      body?.error?.message ?? `Request failed (${response.status})`,
+    );
+  }
+  return body;
+}
